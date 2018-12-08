@@ -1,0 +1,13 @@
+starting: 169.625
+right: 152.8;
+forwards 32.5
+                strafe left 36
+
+
+                middle:182.0
+                        forwards 40
+                turn right 45
+left: 213.5
+                                32.5 forwards
+                turn right ~ 90
+                go forwards 36 inches
