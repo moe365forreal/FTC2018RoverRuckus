@@ -324,7 +324,7 @@ public class Auton extends LinearOpMode {
     public String depotSamplingMarkerRoutine(String mineralLocation) {
         telemetry.addData(mineralLocation, " :LABEL");
         telemetry.update();
-        double power = 0.6;
+        double power = 0.60;
         switch (mineralLocation) {
             case "LEFT":
                 robot.turnDegrees(-40);
