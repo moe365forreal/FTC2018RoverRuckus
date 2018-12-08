@@ -8,6 +8,6 @@ import org.firstinspires.ftc.teamcode.Autonomi.Auton;
 public class MoveSidways extends Auton {
     @Override
     public void runActualSteps() {
-        robot.strafeRightInches(24.0f, 0.5);
+        robot.strafeRightInches(24.0f, 0.55);
     }
 }

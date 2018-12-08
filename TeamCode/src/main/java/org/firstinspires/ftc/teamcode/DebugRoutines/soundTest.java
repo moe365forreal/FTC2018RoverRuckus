@@ -67,7 +67,7 @@ public class soundTest extends LinearOpMode {
 
     // Point to sound files on the phone's drive
 //yes
-    private int test=0;
+    private int test = 1;
     private File Tunuk = new File("/sdcard/Tunak_Tunak_Tun-Daler_Mehndi-www.Mp3Mad.Com.mp3");
     // private File silverFile = new File("/sdcard" + soundPath + "/silver.wav");
 
