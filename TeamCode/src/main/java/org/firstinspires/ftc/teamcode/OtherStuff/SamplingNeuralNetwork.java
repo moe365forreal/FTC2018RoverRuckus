@@ -7,6 +7,9 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.support.annotation.ColorInt;
 
+import com.vuforia.PIXEL_FORMAT;
+
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.tensorflow.lite.Interpreter;
 
 import java.io.FileInputStream;
@@ -21,38 +24,52 @@ public class SamplingNeuralNetwork {
     public static String MODEL_FILE_PATH = "lrc_mineralrecognition.tflite";
     public static final int BYTE_SIZE_OF_FLOAT = 4;
 
-    private MappedByteBuffer loadModelFile(Context activity) throws IOException {
-        AssetFileDescriptor fileDescriptor = activity.getAssets().openFd(MODEL_FILE_PATH);
-        FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
-        FileChannel fileChannel = inputStream.getChannel();
-        long startOffset = fileDescriptor.getStartOffset();
-        long declaredLength = fileDescriptor.getDeclaredLength();
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+    public static Bitmap getBitmapFromVuforia(VuforiaLocalizer vuLocal) {
+        VuforiaLocalizer.CloseableFrame frame = null;
+        try {
+            frame = vuLocal.getFrameQueue().take();
+        } catch (InterruptedException e) {
+            return null;
+        }
+
+        com.vuforia.Image rgb = null;
+
+        long numImages = frame.getNumImages();
+        for (int i = 0; i < numImages; i++) {
+            if (frame.getImage(i).getFormat() == PIXEL_FORMAT.RGB565) {
+                rgb = frame.getImage(i);
+                break;
+            }
+        }
+
+        if (rgb == null) {
+            return null;
+        }
+
+        Bitmap bm = Bitmap.createBitmap(rgb.getWidth(), rgb.getHeight(), Bitmap.Config.RGB_565);
+        bm.copyPixelsFromBuffer(rgb.getPixels());
+
+        return bm;
     }
 
-    public String runPrediction(Interpreter interpreter, String assetImagePath, Context context) {
+    public static String runPrediction(Interpreter interpreter, Bitmap vuforiaImage) {
         ByteBuffer inputBuffer = null;
-        try {
             // get input stream
-            InputStream ims = context.getAssets().open(assetImagePath);
+//            InputStream ims = context.getAssets().open(assetImagePath);
             // load image as Drawable
-            Bitmap image = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(ims), 80, 53, false);
-            image = Bitmap.createBitmap(image, 0, 15, 80, 29);
-            inputBuffer = ByteBuffer.allocateDirect(BYTE_SIZE_OF_FLOAT * image.getWidth() * image.getHeight());
-            inputBuffer.order(ByteOrder.nativeOrder());
-            int i = 0;
-            for (int y = 0; y < image.getHeight(); y++) {
-                for (int x = 0; x < image.getWidth(); x++) {
-                    @ColorInt int rgb = image.getPixel(x, y);
-                    inputBuffer.putFloat((65536 * (Color.red(rgb))) + (256 * (Color.blue(rgb))) + Color.green(rgb));
-                }
+        Bitmap image = Bitmap.createScaledBitmap(vuforiaImage, 80, 53, false);
+        image = Bitmap.createBitmap(image, 0, 15, 80, 29);
+        inputBuffer = ByteBuffer.allocateDirect(BYTE_SIZE_OF_FLOAT * image.getWidth() * image.getHeight());
+        inputBuffer.order(ByteOrder.nativeOrder());
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                @ColorInt int rgb = image.getPixel(x, y);
+                inputBuffer.putFloat((65536 * (Color.red(rgb))) + (256 * (Color.blue(rgb))) + Color.green(rgb));
             }
-        } catch (IOException ex) {
-            return "ERROR READING IN IMAGE - IOEXCEPTION";
         }
 
         float[][] labelProbArray = new float[1][3];
-        if (interpreter == null || inputBuffer == null) {
+        if (interpreter == null) {
             return "ERROR WITH INTERPRETER OR INPUT ARRAY";
         } else {
             interpreter.run(inputBuffer, labelProbArray);
